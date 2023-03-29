@@ -10,6 +10,8 @@ import { commands } from '../commands';
 import type { Command } from '../data-types/command';
 import { logger } from '../utils/logger';
 
+import { createDBClient, destroyDBClient } from '../utils/db';
+
 export const interactionCreate = (client: Client): void => {
   client.on('interactionCreate', async (interaction: Interaction) => {
     // console.dir(interaction, { depth: 2 });
@@ -34,11 +36,14 @@ const handleSlashCommand = async (interaction: ChatInputCommandInteraction): Pro
 
   await interaction.deferReply();
 
+  const prisma = createDBClient();
+
   try {
-    await slashCommand.run(interaction);
+    await slashCommand.run(interaction, prisma);
   } catch (err) {
     logger.error({ err }, 'Error while handling slash command');
     await interaction.editReply({ content: 'Unknown error' });
+    await destroyDBClient(prisma);
   }
 };
 
@@ -55,10 +60,13 @@ const handleButtonClick = async (interaction: MessageComponentInteraction): Prom
     return;
   }
 
+  const prisma = createDBClient();
+
   try {
-    await slashCommand.click(interaction);
+    await slashCommand.click(interaction, prisma);
   } catch (err) {
     logger.error({ err }, 'Error while handling slash command');
     await interaction.editReply({ content: 'Unknown error' });
+    await destroyDBClient(prisma);
   }
 };

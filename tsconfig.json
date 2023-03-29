@@ -107,5 +107,8 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "include": ["src/**/*"],
-  "exclude": ["build", "node_modules", ".devcontainer"]
+  "exclude": ["build", "node_modules", ".devcontainer"],
+  "typeAcquisition": {
+    "enable": true
+  }
 }

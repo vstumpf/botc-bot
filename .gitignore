@@ -2,3 +2,10 @@ node_modules
 build
 
 .devcontainer
+.env
+.env.local
+.vscode
+
+prisma/dev.db
+
+*.log
