@@ -19,6 +19,7 @@ const name = 'daytime';
 const builder: ButtonBuilder = new ButtonBuilder()
   .setCustomId(name)
   .setLabel('Daytime!')
+  .setEmoji('☀️')
   .setStyle(ButtonStyle.Primary);
 
 const click = async (game: Game, interaction: MessageComponentInteraction): Promise<void> => {
