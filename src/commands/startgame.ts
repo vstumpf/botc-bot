@@ -25,18 +25,24 @@ export const startgame: Command = {
   name: 'startgame',
   options: [
     {
-      channel_types: [ChannelType.GuildVoice],
       description: 'Daytime Voice Channel to move users into',
       name: 'daytime',
       required: true,
       type: ApplicationCommandOptionType.Channel,
+      channel_types: [ChannelType.GuildVoice],
     },
     {
-      channel_types: [ChannelType.GuildCategory],
       description: 'Nighttime Category to move users into',
       name: 'nighttime',
       required: true,
       type: ApplicationCommandOptionType.Channel,
+      channel_types: [ChannelType.GuildCategory],
+    },
+    {
+      description: 'Role to use for current game',
+      name: 'role',
+      required: true,
+      type: ApplicationCommandOptionType.Role,
     }
   ],
   run: async (interaction: ChatInputCommandInteraction, prisma: PrismaClient): Promise<void> => {
@@ -50,21 +56,22 @@ export const startgame: Command = {
 const runCommand = async (interaction: ChatInputCommandInteraction, prisma: PrismaClient): Promise<void> => {
   const daytimeChannel = interaction.options.getChannel('daytime');
   const nighttimeChannel = interaction.options.getChannel('nighttime');
+  const playerRole = interaction.options.getRole('role');
 
-  if (daytimeChannel === null || nighttimeChannel === null) {
-    throw new Error('bad channels');
+  if (daytimeChannel === null || nighttimeChannel === null || playerRole === null) {
+    throw new Error('bad channels or role');
   }
 
   await prisma.game.create({
     data: {
-      role: '1',
+      role: playerRole.id,
       nighttime: nighttimeChannel.id,
       channelId: interaction.channelId,
       daytime: daytimeChannel.id,
     }
   });
 
-  const msg = `Starting game for ${daytimeChannel.name ?? 'na'} ${nighttimeChannel.name ?? 'na'}`;
+  const msg = `Starting game for role ${playerRole.name} with ${daytimeChannel.name ?? 'na'} | ${nighttimeChannel.name ?? 'na'}`;
 
   const row = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(
