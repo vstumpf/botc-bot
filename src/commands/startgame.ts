@@ -1,22 +1,24 @@
 import {
   ActionRowBuilder,
   ApplicationCommandOptionType,
-  ButtonBuilder,
-  ButtonStyle,
   ChannelType,
 } from 'discord.js';
 
 import type {
+  ButtonBuilder,
   ChatInputCommandInteraction,
   MessageComponentInteraction
 } from 'discord.js';
 
 import type { PrismaClient } from '@prisma/client';
 
-import type { Command } from '../data-types/command';
+import type { Button, Command } from '../data-types';
+
+import { buttons } from './buttons';
 
 import { logger } from '../utils/logger';
 
+import type { Game } from '.prisma/client';
 
 export const startgame: Command = {
   description: 'Start interaction for a game.',
@@ -46,64 +48,96 @@ export const startgame: Command = {
 };
 
 const runCommand = async (interaction: ChatInputCommandInteraction, prisma: PrismaClient): Promise<void> => {
-  const daytime = interaction.options.getChannel('daytime');
-  const nighttime = interaction.options.getChannel('nighttime');
+  const daytimeChannel = interaction.options.getChannel('daytime');
+  const nighttimeChannel = interaction.options.getChannel('nighttime');
 
-  if (daytime === null || nighttime === null) {
+  if (daytimeChannel === null || nighttimeChannel === null) {
     throw new Error('bad channels');
   }
 
-  await prisma.games.create({
+  await prisma.game.create({
     data: {
       role: '1',
-      nighttime: nighttime.id,
+      nighttime: nighttimeChannel.id,
       channelId: interaction.channelId,
-      daytime: daytime.id,
+      daytime: daytimeChannel.id,
     }
   });
 
-  const msg = `Pong ${daytime?.name ?? 'na'} ${nighttime?.name ?? 'na'}`;
+  const msg = `Starting game for ${daytimeChannel.name ?? 'na'} ${nighttimeChannel.name ?? 'na'}`;
 
   const row = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(
-      new ButtonBuilder()
-        .setCustomId('daytime')
-        .setLabel('Daytime!')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('nighttime')
-        .setLabel('Nighttime!')
-        .setStyle(ButtonStyle.Primary),
+      ...buttons.map((btn: Button) => { return btn.builder; })
     );
-
-  // await prisma.games.create({
-  //   data: {
-  //     message_id: interaction.
-  //   }
-  // })
 
   await interaction.editReply({ content: msg, components: [row] });
 };
 
 const handleClick = async (interaction: MessageComponentInteraction, prisma: PrismaClient): Promise<void> => {
-  const games = await prisma.games.findMany({
+  const game = await findGame(prisma, interaction);
+
+  // find the right button to dispatch
+  const button: Button | undefined = buttons.find((btn: Button) => btn.name === interaction.customId);
+  if (button == null) {
+    await interaction.update({ content: `${interaction.customId} failed, does not exist?` });
+    return;
+  }
+
+  if (button.click === undefined) {
+    await interaction.update({ content: 'Button does not know how to click!?' });
+    return;
+  }
+
+  logger.info(game);
+  logger.info(button);
+
+  await button.click(game, interaction);
+};
+
+const findOwnedGame = async (prisma: PrismaClient, interaction: MessageComponentInteraction): Promise<Game | null> => {
+  return await prisma.game.findFirst({
+    where: {
+      messageId: interaction.message.id,
+    },
+  });
+};
+
+const findUnownedGame = async (prisma: PrismaClient, interaction: MessageComponentInteraction): Promise<Game> => {
+  const games = await prisma.game.findMany({
     where: {
       messageId: null,
+      channelId: interaction.channelId,
     },
     orderBy: [
       { id: 'desc' }
-    ],
+    ]
   });
 
   if (games.length === 0) {
     // we need to error here, no games!?
+    throw new Error('There\'s no game that matches the channel id');
   }
 
   if (games.length > 1) {
     // clean up
+    await prisma.game.deleteMany({
+      where: {
+        id: { in: games.map((game: Game) => { return game.id; }) }
+      }
+    });
   }
 
-  logger.info(games);
+  return await prisma.game.update({
+    data: {
+      messageId: interaction.message.id,
+    },
+    where: {
+      id: games[0].id,
+    }
+  });
+};
 
-  await interaction.update({ content: `${interaction.customId} message Pressed!` });
+const findGame = async (prisma: PrismaClient, interaction: MessageComponentInteraction): Promise<Game> => {
+  return await findOwnedGame(prisma, interaction) ?? await findUnownedGame(prisma, interaction);
 };

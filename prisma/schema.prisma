@@ -11,7 +11,7 @@ datasource db {
 }
 
 
-model Games {
+model Game {
   id Int @id @default(autoincrement())
   channelId String
   messageId String?
