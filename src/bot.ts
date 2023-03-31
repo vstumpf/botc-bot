@@ -1,6 +1,15 @@
 import { Client, GatewayIntentBits } from 'discord.js';
+import * as dotenv from 'dotenv';
 
 import { ready, interactionCreate } from './events';
+
+const DEBUG = process.env.NODE_ENV !== 'production';
+
+if (DEBUG) {
+  dotenv.config({ path: '.env.local' });
+} else {
+  dotenv.config();
+}
 
 const setup = async (): Promise<void> => {
   const client = new Client({
@@ -17,7 +26,7 @@ const setup = async (): Promise<void> => {
   ready(client);
   interactionCreate(client);
 
-  await client.login('MTA4OTcwNzA4NTg1NzU3NDkyMg.G3xvIJ.JaPJeqOczO6OODDQcI7ulMMrpp9BlXw5koJMFE');
+  await client.login(process.env.BOT_TOKEN);
 };
 
 void setup();
