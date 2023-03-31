@@ -16,8 +16,6 @@ import type { Button, Command } from '../data-types';
 
 import { buttons } from './buttons';
 
-import { logger } from '../utils/logger';
-
 import type { Game } from '.prisma/client';
 
 export const startgame: Command = {
@@ -96,8 +94,7 @@ const handleClick = async (interaction: MessageComponentInteraction, prisma: Pri
     return;
   }
 
-  logger.info(game);
-  logger.info(button);
+  await interaction.deferUpdate();
 
   await button.click(game, interaction);
 };

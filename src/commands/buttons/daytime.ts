@@ -45,7 +45,7 @@ const click = async (game: Game, interaction: MessageComponentInteraction): Prom
   }
 
   logger.info(`Clicked the ${name} button!`);
-  await interaction.update({ content: `${interaction.customId} message Pressed!` });
+  await interaction.editReply({ content: `${interaction.customId} message Pressed!` });
 };
 
 
