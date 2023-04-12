@@ -1,0 +1,8 @@
+version: '3.7'
+services:
+  botcbot:
+    build: .
+    volumes:
+      - .env:/app/.env
+    environment:
+      NODE_ENV: production
