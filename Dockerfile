@@ -15,6 +15,5 @@ COPY src src
 
 RUN yarn prisma generate
 RUN yarn build
-RUN yarn update-commands
 
-CMD ["yarn", "serve"]
+CMD ["yarn", "prod"]

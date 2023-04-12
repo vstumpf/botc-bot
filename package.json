@@ -30,6 +30,7 @@
     "dev": "ts-node src/bot.ts",
     "start": "nodemon --exec ts-node --loader ts-node/esm/transpile-only src/bot.ts",
     "serve": "node build/bot.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "prod": "yarn update-commands && yarn serve"
   }
 }
