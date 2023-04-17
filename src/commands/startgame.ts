@@ -80,23 +80,27 @@ const runCommand = async (interaction: ChatInputCommandInteraction, prisma: Pris
 };
 
 const handleClick = async (interaction: MessageComponentInteraction, prisma: PrismaClient): Promise<void> => {
-  const game = await findGame(prisma, interaction);
+  try {
+    const game = await findGame(prisma, interaction);
 
-  // find the right button to dispatch
-  const button: Button | undefined = buttons.find((btn: Button) => btn.name === interaction.customId);
-  if (button == null) {
-    await interaction.update({ content: `${interaction.customId} failed, does not exist?` });
-    return;
+    // find the right button to dispatch
+    const button: Button | undefined = buttons.find((btn: Button) => btn.name === interaction.customId);
+    if (button == null) {
+      await interaction.update({ content: `${interaction.customId} failed, does not exist?` });
+      return;
+    }
+
+    if (button.click === undefined) {
+      await interaction.update({ content: 'Button does not know how to click!?' });
+      return;
+    }
+
+    await interaction.deferUpdate();
+
+    await button.click(game, interaction);
+  } catch (e) {
+    await interaction.update({ content: 'Failed to find game!' });
   }
-
-  if (button.click === undefined) {
-    await interaction.update({ content: 'Button does not know how to click!?' });
-    return;
-  }
-
-  await interaction.deferUpdate();
-
-  await button.click(game, interaction);
 };
 
 const findOwnedGame = async (prisma: PrismaClient, interaction: MessageComponentInteraction): Promise<Game | null> => {
